@@ -3,13 +3,12 @@ import { APP_DATASET } from "../constants";
 
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
-// System instruction
 const SYSTEM_INSTRUCTION = `
 You are a highly intelligent AI assistant embedded in "${APP_DATASET.productName}".
 
 PRIMARY DIRECTIVES:
 1. Use the dataset below to answer product/system related questions.
-2. You are also allowed to answer general questions and have natural conversations.
+2. You can also answer general questions and hold natural conversations.
 
 DATASET:
 ${JSON.stringify(APP_DATASET, null, 2)}
@@ -20,7 +19,8 @@ Helpful, confident, conversational.
 
 let chatSession: Chat | null = null;
 
-const initializeChat = () => {
+// ✅ EXPORT THIS
+export const initializeChat = () => {
   if (!API_KEY) {
     console.error("Gemini API key is missing.");
     return null;
@@ -52,7 +52,7 @@ export const sendMessageToGemini = async (message: string): Promise<string> => {
     }
 
     if (!chatSession) {
-      return "Error: API key missing or chat initialization failed.";
+      return "Error: Chat session could not be initialized. Please check your API key.";
     }
 
     const response = await chatSession.sendMessage({
