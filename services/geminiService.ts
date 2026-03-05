@@ -1,7 +1,7 @@
 import { GoogleGenAI, Chat } from "@google/genai";
 import { APP_DATASET } from '../constants';
 
-const API_KEY = process.env.API_KEY;
+const API_KEY = import.meta.env.VITE_GEMINI_API_KEY;
 
 // Construct the system instruction from the dataset
 // explicitly allowing for general conversation.
@@ -39,7 +39,7 @@ export const initializeChat = () => {
       },
     });
   } catch (error) {
-    console.error("Failed to initialize Gemini chat:", error);
+    console.error("Failed to initialize Kyoto-X chat:", error);
   }
 };
 
@@ -55,7 +55,7 @@ export const sendMessageToGemini = async (message: string): Promise<string> => {
     const response = await chatSession.sendMessage({ message });
     return response.text || "I'm sorry, I couldn't generate a response.";
   } catch (error) {
-    console.error("Error sending message to Gemini:", error);
+    console.error("Error sending message to me:", error);
     return "I encountered a communication error. Please try again.";
   }
 };
