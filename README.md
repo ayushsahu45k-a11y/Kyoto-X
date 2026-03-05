@@ -1,20 +1,68 @@
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+# Kyoto-X
 
-# Run and deploy your AI Studio app
+![Kyoto-X](https://img.shields.io/badge/Kyoto--X-Explorer_Class-blueviolet?style=for-the-badge\&logo=spacex)
+![Version](https://img.shields.io/badge/Version-Mk.%20IV-green?style=for-the-badge)
+![Status](https://img.shields.io/badge/Status-Operational-brightgreen?style=for-the-badge)
+![License](https://img.shields.io/badge/License-MIT-lightgrey?style=for-the-badge)
 
-This contains everything you need to run your app locally.
+## Overview
 
-View your app in AI Studio: https://ai.studio/apps/e3c6e51b-0299-4913-967b-aa12740a756c
+Kyoto-X is a conceptual deep-space exploration system designed with advanced navigation, autonomous maintenance, and AI-assisted operations.
+This repository provides documentation and system specifications related to the Kyoto-X platform.
 
-## Run Locally
+## Key Features
 
-**Prerequisites:**  Node.js
+* **Hyper-Drive** – Enables rapid interstellar travel using advanced propulsion technology.
+* **Nano-Repair System** – Automated hull repair through self-repairing nanobot systems.
+* **StellarMap Navigation** – Real-time mapping and navigation system with hazard detection.
+* **Galactic Translator** – Universal communication interpreter supporting millions of language patterns.
+* **AI Companion System** – Intelligent AI modules for operational support and mission assistance.
+
+## System Status
+
+| System           | Value | Unit | Status      |
+| ---------------- | ----- | ---- | ----------- |
+| Fuel Cells       | 87    | %    | Optimal     |
+| Shield Integrity | 100   | %    | Optimal     |
+| Oxygen           | 95    | %    | Optimal     |
+| Warp Core        | 42    | TB/s | Operational |
+| Hull Health      | 98    | %    | Optimal     |
+
+## Troubleshooting
+
+**Warp Drive Not Engaging**
+Check that the navigation system has a locked trajectory and recalibrate star sensors.
+
+**Artificial Gravity Fluctuation**
+Reset rotational stabilizers in Sector 4.
+
+**Food Synthesizer Issue**
+Replace the flavor cartridge.
 
 
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+## 📬 Contact
+
+📧 Email: your-ayushsahu.45k@gmail.com
+
+💼 LinkedIn: https://www.linkedin.com/in/ayush-sahu-08277330b?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=android_app
+
+🐙 GitHub: https://github.com/ayushsahu45k-a11y
+
+📍 Location: Bhopal, India
+
+
+## Contributing
+
+Contributions, suggestions, and improvements are welcome. Please open an issue or submit a pull request.
+
+⭐ Support
+
+If you like this project, consider giving it a ⭐ on GitHub!
+
+## 📄 License
+
+This project is licensed under the MIT License.
+
+👨‍💻 Author
+
+Made with ❤️ by Ayush
