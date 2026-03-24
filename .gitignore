@@ -1,5 +1,6 @@
+# -----------------------------
 # Logs
-
+# -----------------------------
 logs
 *.log
 npm-debug.log*
@@ -8,37 +9,62 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# -----------------------------
 # Dependencies
-
+# -----------------------------
 node_modules/
 
+# -----------------------------
 # Build outputs
-
+# -----------------------------
 dist
 dist-ssr
 build
+.out
+.next
+.nuxt
 
-# Local environment variables
-
+# -----------------------------
+# Environment variables (CRITICAL)
+# -----------------------------
 .env
 .env.*
+*.env
 *.local
 
-# Editor directories and files
+# Allow safe example file
+!.env.example
 
+# -----------------------------
+# Cache / temp files
+# -----------------------------
+.cache/
+.parcel-cache/
+.vite/
+*.tsbuildinfo
+
+# -----------------------------
+# Editor / IDE
+# -----------------------------
 .vscode/*
 !.vscode/extensions.json
 .idea
-.DS_Store
-
-# OS files
-
-Thumbs.db
-
-# IDE / project files
-
 *.suo
 *.ntvs*
 *.njsproj
 *.sln
 *.sw?
+*.swp
+
+# -----------------------------
+# OS files
+# -----------------------------
+.DS_Store
+Thumbs.db
+
+# -----------------------------
+# Misc
+# -----------------------------
+coverage/
+tmp/
+temp/
