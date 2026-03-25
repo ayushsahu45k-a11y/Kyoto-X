@@ -8,13 +8,8 @@ import { Sidebar } from './components/Sidebar';
 import { SettingsModal } from './components/SettingsModal';
 import { v4 as uuidv4 } from 'uuid';
 import * as Storage from './services/storageService';
-
-// Icons
-const SendIcon = () => (
-  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5">
-    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.269 3.126A59.768 59.768 0 0121.485 12 59.77 59.77 0 013.27 20.876L5.999 12zm0 0h7.5" />
-  </svg>
-);
+import EmojiPicker from 'emoji-picker-react';
+import { Smile, Bold, Italic, Code, Trash2, RefreshCw, Send, Download, ArrowDown } from 'lucide-react';
 
 const MenuIcon = () => (
   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
@@ -31,6 +26,8 @@ function App() {
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showScrollButton, setShowScrollButton] = useState(false);
   
   // State: UI & History
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
@@ -39,6 +36,8 @@ function App() {
   const [theme, setTheme] = useState<Theme>('default');
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const inputRef = useRef<HTMLInputElement>(null);
+  const chatContainerRef = useRef<HTMLDivElement>(null);
 
   // --- Initialization ---
 
@@ -66,9 +65,8 @@ function App() {
     if (theme === 'dark') {
       root.classList.add('dark');
     } else if (theme === 'light') {
-      root.classList.add('light'); // Tailwind usually uses just 'dark' class, but we remove it for light.
+      root.classList.add('light'); 
     } else {
-      // Default / System - defaulting to dark for this space theme
       root.classList.add('dark'); 
     }
   }, [theme]);
@@ -94,10 +92,44 @@ function App() {
     }
   }, [messages, currentSessionId]);
 
-  // Auto-scroll
+  // Auto-scroll and auto-focus
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    if (!isLoading) {
+      inputRef.current?.focus();
+    }
   }, [messages, isLoading]);
+
+  const handleScroll = () => {
+    if (!chatContainerRef.current) return;
+    const { scrollTop, scrollHeight, clientHeight } = chatContainerRef.current;
+    const isNearBottom = scrollHeight - scrollTop - clientHeight < 100;
+    setShowScrollButton(!isNearBottom);
+  };
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  const handleExportChat = () => {
+    if (messages.length === 0) return;
+    
+    let content = `# Chat Export - ${new Date().toLocaleString()}\n\n`;
+    messages.forEach(msg => {
+      const role = msg.role === Role.USER ? (user?.name || 'User') : APP_DATASET.productName;
+      content += `### ${role} (${new Date(msg.timestamp).toLocaleTimeString()})\n${msg.text}\n\n`;
+    });
+
+    const blob = new Blob([content], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `chat-export-${new Date().toISOString().split('T')[0]}.md`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
 
   // --- Handlers ---
 
@@ -130,7 +162,6 @@ function App() {
       },
     ]);
     
-    // On mobile, close sidebar when starting new chat
     if (window.innerWidth < 1024) setIsSidebarOpen(false);
   };
 
@@ -155,8 +186,8 @@ function App() {
 
     const userText = input.trim();
     setInput('');
+    setShowEmojiPicker(false);
     
-    // Optimistic UI update
     const newUserMsg: Message = {
       id: uuidv4(),
       role: Role.USER,
@@ -182,11 +213,67 @@ function App() {
     }
   };
 
+  const handleRegenerate = async () => {
+    if (messages.length < 2 || isLoading) return;
+    
+    // Find last user message
+    const lastUserMsgIndex = [...messages].reverse().findIndex(m => m.role === Role.USER);
+    if (lastUserMsgIndex === -1) return;
+    
+    const actualIndex = messages.length - 1 - lastUserMsgIndex;
+    const lastUserMsg = messages[actualIndex];
+    
+    // Remove all messages after the last user message
+    setMessages(prev => prev.slice(0, actualIndex + 1));
+    setIsLoading(true);
+
+    try {
+      const responseText = await sendMessageToGemini(lastUserMsg.text);
+      const newBotMsg: Message = {
+        id: uuidv4(),
+        role: Role.MODEL,
+        text: responseText,
+        timestamp: new Date(),
+      };
+      setMessages((prev) => [...prev, newBotMsg]);
+    } catch (error) {
+      console.error("Failed to regenerate response", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleClearChat = () => {
+    if (window.confirm("Are you sure you want to clear the current chat?")) {
+      startNewChat();
+    }
+  };
+
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       handleSend();
     }
+  };
+
+  const onEmojiClick = (emojiObject: any) => {
+    setInput(prev => prev + emojiObject.emoji);
+  };
+
+  const insertMarkdown = (prefix: string, suffix: string = '') => {
+    if (!inputRef.current) return;
+    const start = inputRef.current.selectionStart || 0;
+    const end = inputRef.current.selectionEnd || 0;
+    const selectedText = input.substring(start, end);
+    const newText = input.substring(0, start) + prefix + selectedText + suffix + input.substring(end);
+    setInput(newText);
+    
+    setTimeout(() => {
+      if (inputRef.current) {
+        inputRef.current.focus();
+        inputRef.current.setSelectionRange(start + prefix.length, end + prefix.length);
+      }
+    }, 0);
   };
 
   // --- Render ---
@@ -242,22 +329,54 @@ function App() {
             </button>
             <div>
               <h1 className="text-lg font-bold text-slate-800 dark:text-white tracking-tight">{APP_DATASET.productName}</h1>
-              <div className="flex items-center gap-2 text-xs text-indigo-500 dark:text-indigo-400 font-medium">
+              <div className="flex items-center gap-2 text-xs text-blue-500 dark:text-slate-400 font-medium">
                 <span className="relative flex h-2 w-2">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-indigo-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-indigo-500"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 dark:bg-slate-500 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500 dark:bg-slate-400"></span>
                 </span>
                 Connected
               </div>
             </div>
           </div>
-          <div className="hidden md:block text-xs text-slate-400 dark:text-slate-500">
-             Experience-Ai-with-Ayush
+          <div className="flex items-center gap-4">
+            <div className="hidden md:block text-xs text-slate-400 dark:text-slate-500">
+               Experience-Ai-with-Ayush
+            </div>
+            <div className="flex items-center gap-2 border-l border-slate-200 dark:border-slate-700 pl-4">
+              <button 
+                onClick={handleExportChat}
+                disabled={messages.length === 0}
+                className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 transition-colors disabled:opacity-50"
+                title="Export chat as Markdown"
+              >
+                <Download size={18} />
+              </button>
+              <button 
+                onClick={handleRegenerate}
+                disabled={isLoading || messages.length < 2}
+                className="p-2 text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 transition-colors disabled:opacity-50"
+                title="Regenerate last response"
+              >
+                <RefreshCw size={18} />
+              </button>
+              <button 
+                onClick={handleClearChat}
+                disabled={isLoading}
+                className="p-2 text-slate-400 hover:text-red-500 transition-colors disabled:opacity-50"
+                title="Clear chat"
+              >
+                <Trash2 size={18} />
+              </button>
+            </div>
           </div>
         </header>
 
         {/* Messages */}
-        <div className="flex-1 overflow-y-auto px-4 md:px-12 py-6 custom-scrollbar scroll-smooth">
+        <div 
+          ref={chatContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-4 md:px-12 py-6 custom-scrollbar scroll-smooth relative"
+        >
           <div className="max-w-4xl mx-auto w-full">
             {messages.map((msg) => (
               <ChatMessage key={msg.id} message={msg} user={user} />
@@ -268,9 +387,9 @@ function App() {
                 <div className="flex items-center gap-3">
                    <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-800"></div>
                    <div className="px-5 py-4 rounded-2xl rounded-tl-none bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700/50 flex items-center gap-1.5 shadow-sm">
-                      <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
-                      <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
-                      <div className="w-1.5 h-1.5 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 dark:bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 dark:bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-1.5 h-1.5 bg-blue-500 dark:bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
                    </div>
                 </div>
               </div>
@@ -279,32 +398,78 @@ function App() {
           </div>
         </div>
 
+        {/* Scroll to Bottom Button */}
+        {showScrollButton && (
+          <button
+            onClick={scrollToBottom}
+            className="absolute bottom-28 right-8 p-3 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-full shadow-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700 transition-all z-10 animate-fade-in"
+            title="Scroll to bottom"
+          >
+            <ArrowDown size={20} />
+          </button>
+        )}
+
         {/* Input Area */}
-        <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 transition-colors">
-          <div className="max-w-4xl mx-auto relative flex items-end gap-3">
-            <div className="flex-1 relative group">
-              <input
-                type="text"
-                value={input}
-                onChange={(e) => setInput(e.target.value)}
-                onKeyDown={handleKeyDown}
-                placeholder={`Message ${APP_DATASET.productName}...`}
-                className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-500 rounded-2xl px-6 py-4 pr-12 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 border border-transparent focus:border-indigo-500/30 transition-all shadow-inner"
-                disabled={isLoading}
-                autoFocus
-              />
+        <div className="p-4 md:p-6 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 transition-colors relative">
+          <div className="max-w-4xl mx-auto">
+            {/* Markdown Toolbar */}
+            <div className="flex items-center gap-2 mb-2 px-2">
+              <button onClick={() => insertMarkdown('**', '**')} className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors" title="Bold">
+                <Bold size={16} />
+              </button>
+              <button onClick={() => insertMarkdown('*', '*')} className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors" title="Italic">
+                <Italic size={16} />
+              </button>
+              <button onClick={() => insertMarkdown('`', '`')} className="p-1.5 text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors" title="Code">
+                <Code size={16} />
+              </button>
+              <div className="flex-1"></div>
+              <button 
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)} 
+                className={`p-1.5 rounded transition-colors ${showEmojiPicker ? 'text-blue-600 dark:text-slate-300 bg-blue-50 dark:bg-slate-800' : 'text-slate-400 hover:text-blue-600 dark:hover:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800'}`}
+                title="Emoji"
+              >
+                <Smile size={18} />
+              </button>
             </div>
-            <button
-              onClick={handleSend}
-              disabled={isLoading || !input.trim()}
-              className={`p-4 rounded-2xl flex items-center justify-center transition-all duration-200 shadow-lg ${
-                isLoading || !input.trim()
-                  ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-500 text-white hover:scale-105 active:scale-95 shadow-indigo-500/30'
-              }`}
-            >
-              <SendIcon />
-            </button>
+
+            {/* Emoji Picker Popup */}
+            {showEmojiPicker && (
+              <div className="absolute bottom-full right-4 md:right-auto md:left-1/2 md:-translate-x-1/2 mb-2 z-50 shadow-2xl rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700">
+                <EmojiPicker 
+                  onEmojiClick={onEmojiClick} 
+                  theme={theme === 'dark' ? 'dark' : 'light'}
+                  lazyLoadEmojis={true}
+                />
+              </div>
+            )}
+
+            <div className="relative flex items-end gap-3">
+              <div className="flex-1 relative group">
+                <input
+                  ref={inputRef}
+                  type="text"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={`Message ${APP_DATASET.productName}...`}
+                  className="w-full bg-slate-100 dark:bg-slate-800 text-slate-900 dark:text-white placeholder-slate-500 dark:placeholder-slate-400 rounded-2xl px-6 py-4 focus:outline-none focus:ring-2 focus:ring-blue-500/50 dark:focus:ring-slate-700 border border-transparent focus:border-blue-500/30 dark:focus:border-slate-600 transition-all shadow-inner"
+                  disabled={isLoading}
+                  autoFocus
+                />
+              </div>
+              <button
+                onClick={handleSend}
+                disabled={isLoading || !input.trim()}
+                className={`p-4 rounded-2xl flex items-center justify-center transition-all duration-200 shadow-lg ${
+                  isLoading || !input.trim()
+                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed'
+                    : 'bg-blue-600 dark:bg-slate-900 hover:bg-blue-500 dark:hover:bg-slate-800 text-white hover:scale-105 active:scale-95 shadow-blue-500/30 dark:shadow-slate-900/50'
+                }`}
+              >
+                <Send size={20} />
+              </button>
+            </div>
           </div>
         </div>
       </main>

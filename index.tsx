@@ -1,39 +1,15 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
 
-/* Custom scrollbar for Webkit */
-.custom-scrollbar::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-track {
-  background: #0f172a;
-}
-.custom-scrollbar::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #334155;
-  border-radius: 4px;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 4px;
-}
-.dark .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #475569;
-}
-.custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+const rootElement = document.getElementById('root');
+if (!rootElement) {
+  throw new Error("Could not find root element to mount to");
 }
 
-@layer utilities {
-  @keyframes fadeIn {
-    0% { opacity: 0; transform: scale(0.95); }
-    100% { opacity: 1; transform: scale(1); }
-  }
-  .animate-fade-in {
-    animation: fadeIn 0.3s ease-out;
-  }
-}
+const root = ReactDOM.createRoot(rootElement);
+root.render(
+  <React.StrictMode>
+    <App />
+  </React.StrictMode>
+);

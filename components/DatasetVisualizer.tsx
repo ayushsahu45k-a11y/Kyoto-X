@@ -24,7 +24,7 @@ export const DatasetVisualizer: React.FC = () => {
     <div className="h-full overflow-y-auto p-4 md:p-6 space-y-8 custom-scrollbar">
       {/* Header */}
       <div>
-        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-indigo-400 to-cyan-400">
+        <h2 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-600 to-blue-400 dark:from-slate-300 dark:to-slate-100">
           {APP_DATASET.productName}
         </h2>
         <p className="text-xs text-slate-400 mt-1 uppercase tracking-widest font-semibold">
@@ -64,7 +64,7 @@ export const DatasetVisualizer: React.FC = () => {
         <div className="grid grid-cols-1 gap-3">
           {Object.entries(features).map(([key, value]) => (
             <div key={key} className="bg-slate-800/40 p-3 rounded-lg border border-slate-700/50">
-              <div className="font-semibold text-indigo-300 text-sm mb-1">{key}</div>
+              <div className="font-semibold text-blue-600 dark:text-slate-300 text-sm mb-1">{key}</div>
               <div className="text-xs text-slate-400">{value}</div>
             </div>
           ))}
@@ -86,7 +86,7 @@ export const DatasetVisualizer: React.FC = () => {
        <div className="space-y-3">
         <h3 className="text-sm font-bold text-slate-400 uppercase tracking-wide">FAQ</h3>
         {faq.map((item, idx) => (
-          <div key={idx} className="bg-slate-800/40 p-3 rounded-lg border-l-2 border-cyan-500">
+          <div key={idx} className="bg-slate-800/40 p-3 rounded-lg border-l-2 border-blue-500 dark:border-slate-500">
              <div className="font-medium text-slate-200 text-xs mb-1">Q: {item.question}</div>
              <div className="text-xs text-slate-400">A: {item.answer}</div>
           </div>
